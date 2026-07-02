@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Galería de fotos - Costos Ficha Técnica</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    background: #f4f4f6;
+    color: #222;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    background: #2c3e50;
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  #search {
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+    padding: 10px 14px;
+    font-size: 16px;
+    border: none;
+    border-radius: 6px;
+    outline: none;
+  }
+  #count {
+    font-size: 14px;
+    color: #cfd8dc;
+    white-space: nowrap;
+  }
+  #catBar, #subBar, #subSubBar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #34495e;
+    flex-wrap: wrap;
+  }
+  #subBar {
+    background: #3d566e;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+  #subSubBar {
+    background: #46617c;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+  .cat-btn, .sub-btn {
+    background: transparent;
+    border: 1px solid #5d6d7e;
+    color: #ecf0f1;
+    border-radius: 16px;
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .cat-btn:hover, .sub-btn:hover {
+    background: #4a6278;
+  }
+  .cat-btn.active, .sub-btn.active {
+    background: #2980b9;
+    border-color: #2980b9;
+    font-weight: 600;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    padding: 20px;
+  }
+  .item {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+    text-align: center;
+  }
+  .item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+  .item .thumb-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .item .code {
+    padding: 8px 4px;
+    font-size: 13px;
+    font-weight: 600;
+    word-break: break-all;
+    color: #2c3e50;
+  }
+  .hidden { display: none !important; }
+  #empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    font-size: 16px;
+  }
+  /* Modal */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  #overlay.hidden { display: none; }
+  #modal {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 98vw;
+    max-height: 98vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  #modal img {
+    max-width: 96vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: 6px;
+  }
+  #modal .code {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2c3e50;
+  }
+  #modal .close-btn {
+    position: absolute;
+    top: 18px;
+    right: 28px;
+    color: white;
+    font-size: 34px;
+    cursor: pointer;
+    font-weight: bold;
+    line-height: 1;
+  }
+  #modal .nav-btn {
+    background: #2c3e50;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  #modal .nav-row {
+    display: flex;
+    gap: 10px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Galería de fotos</h1>
+  <input type="text" id="search" placeholder="Buscar código... (ej. 80521)" autofocus>
+  <span id="count"></span>
+</header>
+
+<div id="catBar">
+  <button class="cat-btn active" data-cat="todos">Todos</button>
+  <button class="cat-btn" data-cat="bolsos">Bolsos</button>
+  <button class="cat-btn" data-cat="calzado">Calzado</button>
+</div>
+<div id="subBar" class="hidden"></div>
+<div id="subSubBar" class="hidden"></div>
+
+<div id="grid"></div>
+<div id="empty" class="hidden">No se encontraron códigos que coincidan con la búsqueda.</div>
+
+<div id="overlay" class="hidden">
+  <div id="modal" style="position:relative;">
+    <span class="close-btn" id="closeBtn">&times;</span>
+    <div class="code" id="modalCode"></div>
+    <img id="modalImg" src="" alt="">
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn">&larr; Anterior</button>
+      <button class="nav-btn" id="nextBtn">Siguiente &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const items = [["0", "0.jpg"], ["10", "10.jpg"], ["10017", "10017.jpg"], ["10018", "10018.jpg"], ["10019", "10019.jpg"], ["10020", "10020.jpg"], ["11", "11.jpg"], ["12", "12.jpg"], ["40006", "40006.jpg"], ["40007", "40007.jpg"], ["40010", "40010.jpg"], ["40011", "40011.jpg"], ["40012", "40012.jpg"], ["40013", "40013.jpg"], ["40014", "40014.jpg"], ["40015", "40015.jpg"], ["40016", "40016.jpg"], ["40021", "40021.jpg"], ["40022", "40022.jpg"], ["40024", "40024.jpg"], ["40027", "40027.jpg"], ["40029", "40029.jpg"], ["40030", "40030.jpg"], ["40031", "40031.jpg"], ["40032", "40032.jpg"], ["40033", "40033.jpg"], ["4707", "4707.jpg"], ["4708", "4708.jpg"], ["5065", "5065.jpg"], ["51000", "51000.jpg"], ["51002", "51002.jpg"], ["51003", "51003.jpg"], ["51005", "51005.jpg"], ["51006", "51006.jpg"], ["51007", "51007.jpg"], ["51008", "51008.jpg"], ["51010", "51010.jpg"], ["51011", "51011.jpg"], ["51019", "51019.jpg"], ["51021", "51021.jpg"], ["51022", "51022.jpg"], ["51026", "51026.jpg"], ["51033", "51033.jpg"], ["51034", "51034.jpg"], ["51036", "51036.jpg"], ["51037", "51037.jpg"], ["51038", "51038.jpg"], ["51042", "51042.jpg"], ["51043", "51043.jpg"], ["51044", "51044.jpg"], ["51045", "51045.jpg"], ["51047", "51047.jpg"], ["51048", "51048.jpg"], ["51049", "51049.jpg"], ["51050", "51050.jpg"], ["51051", "51051.jpg"], ["51052", "51052.jpg"], ["51053", "51053.jpg"], ["51054", "51054.jpg"], ["51057", "51057.jpg"], ["51058", "51058.jpg"], ["51059", "51059.jpg"], ["51060", "51060.jpg"], ["51061", "51061.jpg"], ["51062", "51062.jpg"], ["51063", "51063.jpg"], ["51064", "51064.jpg"], ["51067", "51067.jpg"], ["51068", "51068.jpg"], ["51069", "51069.jpg"], ["51070", "51070.jpg"], ["51071", "51071.jpg"], ["51072", "51072.jpg"], ["51073", "51073.jpg"], ["51074", "51074.jpg"], ["51075", "51075.jpg"], ["51076", "51076.jpg"], ["51077", "51077.jpg"], ["51079", "51079.jpg"], ["5108", "5108.jpg"], ["51080", "51080.jpg"], ["51081", "51081.jpg"], ["51082", "51082.jpg"], ["51083", "51083.jpg"], ["5116", "5116.jpg"], ["5121", "5121.jpg"], ["5136", "5136.jpg"], ["5138", "5138.jpg"], ["5141", "5141.jpg"], ["5142", "5142.jpg"], ["5143", "5143.jpg"], ["5147", "5147.jpg"], ["5151", "5151.jpg"], ["5157", "5157.jpg"], ["5162", "5162.jpg"], ["5163", "5163.jpg"], ["5164", "5164.jpg"], ["5165", "5165.jpg"], ["5166", "5166.jpg"], ["5168", "5168.jpg"], ["5169", "5169.jpg"], ["5170", "5170.jpg"], ["5176", "5176.jpg"], ["5178", "5178.jpg"], ["5179", "5179.jpg"], ["5180", "5180.jpg"], ["5181", "5181.jpg"], ["5182", "5182.jpg"], ["5184", "5184.jpg"], ["5185", "5185.jpg"], ["5186", "5186.jpg"], ["5188", "5188.jpg"], ["5196", "5196.jpg"], ["5197", "5197.jpg"], ["5198", "5198.jpg"], ["52002", "52002.jpg"], ["52003", "52003.jpg"], ["52007", "52007.jpg"], ["52008", "52008.jpg"], ["52010", "52010.jpg"], ["52011", "52011.jpg"], ["52012", "52012.jpg"], ["52013", "52013.jpg"], ["52014", "52014.jpg"], ["52015", "52015.jpg"], ["52016", "52016.jpg"], ["52017", "52017.jpg"], ["52018", "52018.jpg"], ["5202", "5202.jpg"], ["5203", "5203.jpg"], ["5204", "5204.jpg"], ["5208", "5208.jpg"], ["5211", "5211.jpg"], ["5212", "5212.jpg"], ["5214", "5214.jpg"], ["5215", "5215.jpg"], ["5217", "5217.jpg"], ["5218", "5218.jpg"], ["5227", "5227.jpg"], ["5230", "5230.jpg"], ["5231", "5231.jpg"], ["5232", "5232.jpg"], ["5235", "5235.jpg"], ["5238", "5238.jpg"], ["5240", "5240.jpg"], ["5242", "5242.jpg"], ["5243", "5243.jpg"], ["5244", "5244.jpg"], ["5246", "5246.jpg"], ["5248", "5248.jpg"], ["5251", "5251.jpg"], ["5252", "5252.jpg"], ["5253", "5253.jpg"], ["5254", "5254.jpg"], ["5256", "5256.jpg"], ["5257", "5257.jpg"], ["5258", "5258.jpg"], ["5259", "5259.jpg"], ["5261", "5261.jpg"], ["5262", "5262.jpg"], ["5263", "5263.jpg"], ["5264", "5264.jpg"], ["5265", "5265.jpg"], ["5266", "5266.jpg"], ["5267", "5267.jpg"], ["5268", "5268.jpg"], ["5277", "5277.jpg"], ["5279", "5279.jpg"], ["5280", "5280.jpg"], ["5281", "5281.jpg"], ["5282", "5282.jpg"], ["5283", "5283.jpg"], ["5284", "5284.jpg"], ["5285", "5285.jpg"], ["5286", "5286.jpg"], ["5292", "5292.jpg"], ["5294", "5294.jpg"], ["5295", "5295.jpg"], ["5296", "5296.jpg"], ["5298", "5298.jpg"], ["5299", "5299.jpg"], ["5300", "5300.jpg"], ["53001", "53001.jpg"], ["53002", "53002.jpg"], ["53003", "53003.jpg"], ["53005", "53005.jpg"], ["53006", "53006.jpg"], ["53007", "53007.jpg"], ["53008", "53008.jpg"], ["53009", "53009.jpg"], ["53010", "53010.jpg"], ["53011", "53011.jpg"], ["53012", "53012.jpg"], ["53013", "53013.jpg"], ["53014", "53014.jpg"], ["53015", "53015.jpg"], ["53018", "53018.jpg"], ["53025", "53025.jpg"], ["53027", "53027.jpg"], ["53030", "53030.jpg"], ["53032", "53032.jpg"], ["53035", "53035.jpg"], ["53036", "53036.jpg"], ["53037", "53037.jpg"], ["53039", "53039.jpg"], ["5304", "5304.jpg"], ["53040", "53040.jpg"], ["53041", "53041.jpg"], ["53042", "53042.jpg"], ["53044", "53044.jpg"], ["53045", "53045.jpg"], ["53046", "53046.jpg"], ["53047", "53047.jpg"], ["53049", "53049.jpg"], ["5305", "5305.jpg"], ["53050", "53050.jpg"], ["5309", "5309.jpg"], ["5312", "5312.jpg"], ["5313", "5313.jpg"], ["5315", "5315.jpg"], ["5316", "5316.jpg"], ["5318", "5318.jpg"], ["5320", "5320.jpg"], ["5321", "5321.jpg"], ["5323", "5323.jpg"], ["5324", "5324.jpg"], ["5326", "5326.jpg"], ["5327", "5327.jpg"], ["5329", "5329.jpg"], ["5330", "5330.jpg"], ["5331", "5331.jpg"], ["5336", "5336.jpg"], ["5337", "5337.jpg"], ["5341", "5341.jpg"], ["5343", "5343.jpg"], ["5344", "5344.jpg"], ["5353", "5353.jpg"], ["5354", "5354.jpg"], ["5357", "5357.jpg"], ["5358", "5358.jpg"], ["5361", "5361.jpg"], ["5362", "5362.jpg"], ["5365", "5365.jpg"], ["5367", "5367.jpg"], ["5369", "5369.jpg"], ["5370", "5370.jpg"], ["5372", "5372.jpg"], ["5373", "5373.jpg"], ["5377", "5377.jpg"], ["5379", "5379.jpg"], ["5381", "5381.jpg"], ["5383", "5383.jpg"], ["5384", "5384.jpg"], ["5385", "5385.jpg"], ["5386", "5386.jpg"], ["54000", "54000.jpg"], ["54002", "54002.jpg"], ["54003 Rojo", "54003 Rojo.jpg"], ["54003", "54003.jpg"], ["54005", "54005.jpg"], ["54006 Negro", "54006 Negro.jpg"], ["54006 Rojo", "54006 Rojo.jpg"], ["54006", "54006.jpg"], ["54007", "54007.jpg"], ["54008", "54008.jpg"], ["54009", "54009.jpg"], ["5401", "5401.jpg"], ["54010", "54010.jpg"], ["54011", "54011.jpg"], ["54012", "54012.jpg"], ["54013", "54013.jpg"], ["54014 Verde", "54014 Verde.jpg"], ["54014", "54014.jpg"], ["54015", "54015.jpg"], ["54016 Rojo", "54016 Rojo.jpg"], ["54016", "54016.jpg"], ["54017", "54017.jpg"], ["54018", "54018.jpg"], ["54019", "54019.jpg"], ["54020", "54020.jpg"], ["54021", "54021.jpg"], ["54022", "54022.jpg"], ["54023", "54023.jpg"], ["54024", "54024.jpg"], ["54025", "54025.jpg"], ["54026", "54026.jpg"], ["54027", "54027.jpg"], ["54029 Rojo", "54029 Rojo.jpg"], ["54029", "54029.jpg"], ["54030", "54030.jpg"], ["54031", "54031.jpg"], ["54032", "54032.jpg"], ["54034", "54034.jpg"], ["54036", "54036.jpg"], ["54037", "54037.jpg"], ["54039", "54039.jpg"], ["54041", "54041.jpg"], ["54042", "54042.jpg"], ["54043", "54043.jpg"], ["54044", "54044.jpg"], ["54045", "54045.jpg"], ["54046", "54046.jpg"], ["54048", "54048.jpg"], ["54049", "54049.jpg"], ["54050", "54050.jpg"], ["54051", "54051.jpg"], ["54052", "54052.jpg"], ["54053", "54053.jpg"], ["54054", "54054.jpg"], ["54055", "54055.jpg"], ["54057", "54057.jpg"], ["54058", "54058.jpg"], ["54059", "54059.jpg"], ["5406", "5406.jpg"], ["54060", "54060.jpg"], ["54061", "54061.jpg"], ["54062", "54062.jpg"], ["5411", "5411.jpg"], ["5413", "5413.jpg"], ["5422", "5422.jpg"], ["5425", "5425.jpg"], ["5428", "5428.jpg"], ["5440", "5440.jpg"], ["5442", "5442.jpg"], ["5446", "5446.jpg"], ["5449", "5449.jpg"], ["5450", "5450.jpg"], ["5455", "5455.jpg"], ["5456", "5456.jpg"], ["5469", "5469.jpg"], ["5472", "5472.jpg"], ["5476", "5476.jpg"], ["5478", "5478.jpg"], ["55001", "55001.jpg"], ["55003", "55003.jpg"], ["55006", "55006.jpg"], ["55007", "55007.jpg"], ["55010", "55010.jpg"], ["55012", "55012.jpg"], ["55013", "55013.jpg"], ["55014", "55014.jpg"], ["55015", "55015.jpg"], ["55016", "55016.jpg"], ["55017", "55017.jpg"], ["55018", "55018.jpg"], ["55019", "55019.jpg"], ["55020", "55020.jpg"], ["55021", "55021.jpg"], ["55022", "55022.jpg"], ["55023", "55023.jpg"], ["55024", "55024.jpg"], ["55025", "55025.jpg"], ["55026", "55026.jpg"], ["55027", "55027.jpg"], ["55029", "55029.jpg"], ["55030", "55030.jpg"], ["55032", "55032.jpg"], ["55033", "55033.jpg"], ["55034", "55034.jpg"], ["55055", "55055.jpg"], ["55056", "55056.jpg"], ["55057", "55057.jpg"], ["55058", "55058.jpg"], ["55059", "55059.jpg"], ["55060", "55060.jpg"], ["55065", "55065.jpg"], ["55066", "55066.jpg"], ["55071", "55071.jpg"], ["55073", "55073.jpg"], ["55076", "55076.jpg"], ["55077", "55077.jpg"], ["55078", "55078.jpg"], ["55080", "55080.jpg"], ["55081", "55081.jpg"], ["55083", "55083.jpg"], ["55084", "55084.jpg"], ["55086", "55086.jpg"], ["55087", "55087.jpg"], ["55088", "55088.jpg"], ["55089", "55089.jpg"], ["55092", "55092.jpg"], ["55095", "55095.jpg"], ["55097", "55097.jpg"], ["55099", "55099.jpg"], ["55104", "55104.jpg"], ["55109", "55109.jpg"], ["55111", "55111.jpg"], ["55112", "55112.jpg"], ["55115", "55115.jpg"], ["55116", "55116.jpg"], ["55117", "55117.jpg"], ["55118", "55118.jpg"], ["55119", "55119.jpg"], ["55120", "55120.jpg"], ["55121", "55121.jpg"], ["55122", "55122.jpg"], ["55123", "55123.jpg"], ["55124", "55124.jpg"], ["55125", "55125.jpg"], ["55126", "55126.jpg"], ["55127", "55127.jpg"], ["55128", "55128.jpg"], ["55129", "55129.jpg"], ["55130", "55130.jpg"], ["55131", "55131.jpg"], ["55132", "55132.jpg"], ["55133", "55133.jpg"], ["55134", "55134.jpg"], ["55135", "55135.jpg"], ["55138", "55138.jpg"], ["55139", "55139.jpg"], ["55140", "55140.jpg"], ["55141", "55141.jpg"], ["55142", "55142.jpg"], ["55143", "55143.jpg"], ["55145", "55145.jpg"], ["55146", "55146.jpg"], ["55148", "55148.jpg"], ["55149", "55149.jpg"], ["55150", "55150.jpg"], ["55151", "55151.jpg"], ["55152", "55152.jpg"], ["55153", "55153.jpg"], ["55154", "55154.jpg"], ["55155", "55155.jpg"], ["55156", "55156.jpg"], ["55157", "55157.jpg"], ["55161", "55161.jpg"], ["55162", "55162.jpg"], ["55164", "55164.jpg"], ["55165", "55165.jpg"], ["55167", "55167.jpg"], ["55168", "55168.jpg"], ["55169", "55169.jpg"], ["55172", "55172.jpg"], ["55173", "55173.jpg"], ["55174", "55174.jpg"], ["55175", "55175.jpg"], ["55176", "55176.jpg"], ["55178", "55178.jpg"], ["55179", "55179.jpg"], ["55180", "55180.jpg"], ["55181", "55181.jpg"], ["55182", "55182.jpg"], ["55183", "55183.jpg"], ["55184", "55184.jpg"], ["55185", "55185.jpg"], ["55186", "55186.jpg"], ["55187", "55187.jpg"], ["55188", "55188.jpg"], ["55189", "55189.jpg"], ["55190", "55190.jpg"], ["55191", "55191.jpg"], ["55192", "55192.jpg"], ["55193", "55193.jpg"], ["55194", "55194.jpg"], ["55195", "55195.jpg"], ["55196", "55196.jpg"], ["55197", "55197.jpg"], ["55198", "55198.jpg"], ["55199", "55199.jpg"], ["55200", "55200.jpg"], ["55201", "55201.jpg"], ["55202", "55202.jpg"], ["55203", "55203.jpg"], ["55204", "55204.jpg"], ["55205", "55205.jpg"], ["55206", "55206.jpg"], ["55207", "55207.jpg"], ["55208", "55208.jpg"], ["55209", "55209.jpg"], ["55210", "55210.jpg"], ["55211", "55211.jpg"], ["55212", "55212.jpg"], ["55213", "55213.jpg"], ["55214", "55214.jpg"], ["55215", "55215.jpg"], ["55216", "55216.jpg"], ["55218", "55218.jpg"], ["55219", "55219.jpg"], ["55220", "55220.jpg"], ["55221", "55221.jpg"], ["5577", "5577.jpg"], ["5579", "5579.jpg"], ["5580", "5580.jpg"], ["5583", "5583.jpg"], ["5584", "5584.jpg"], ["5590", "5590.jpg"], ["56003", "56003.jpg"], ["56006", "56006.jpg"], ["56007", "56007.jpg"], ["56009", "56009.jpg"], ["56010", "56010.jpg"], ["56014", "56014.jpg"], ["56015", "56015.jpg"], ["56016", "56016.jpg"], ["56017", "56017.jpg"], ["56023", "56023.jpg"], ["56024", "56024.jpg"], ["56025", "56025.jpg"], ["56026", "56026.jpg"], ["56028", "56028.jpg"], ["56030", "56030.jpg"], ["56031", "56031.jpg"], ["56032 Dorado", "56032 Dorado.jpg"], ["56032", "56032.jpg"], ["56034", "56034.jpg"], ["56035", "56035.jpg"], ["56036", "56036.jpg"], ["56037 Negro", "56037 Negro.jpg"], ["56037 Rojo", "56037 Rojo.jpg"], ["56037", "56037.jpg"], ["56040", "56040.jpg"], ["56041", "56041.jpg"], ["56042", "56042.jpg"], ["56044", "56044.jpg"], ["56046", "56046.jpg"], ["56047", "56047.jpg"], ["56048", "56048.jpg"], ["56049", "56049.jpg"], ["56050 Negro", "56050 Negro.jpg"], ["56050", "56050.jpg"], ["56051", "56051.jpg"], ["56052", "56052.jpg"], ["56053", "56053.jpg"], ["56054", "56054.jpg"], ["56055", "56055.jpg"], ["56056", "56056.jpg"], ["56057", "56057.jpg"], ["56058", "56058.jpg"], ["56059", "56059.jpg"], ["56060", "56060.jpg"], ["56061", "56061.jpg"], ["56062", "56062.jpg"], ["56063", "56063.jpg"], ["56065", "56065.jpg"], ["56066", "56066.jpg"], ["56067 Rojo", "56067 Rojo.jpg"], ["56067", "56067.jpg"], ["56068", "56068.jpg"], ["56069", "56069.jpg"], ["56070", "56070.jpg"], ["56071", "56071.jpg"], ["56072", "56072.jpg"], ["56073", "56073.jpg"], ["56074", "56074.jpg"], ["56075 Rojo", "56075 Rojo.jpg"], ["56075", "56075.jpg"], ["56076", "56076.jpg"], ["5608", "5608.jpg"], ["57000", "57000.jpg"], ["57001", "57001.jpg"], ["57004", "57004.jpg"], ["57005", "57005.jpg"], ["57007", "57007.jpg"], ["57008", "57008.jpg"], ["57009", "57009.jpg"], ["57010", "57010.jpg"], ["57011", "57011.jpg"], ["57014", "57014.jpg"], ["57017", "57017.jpg"], ["57018", "57018.jpg"], ["57019 Rojo", "57019 Rojo.jpg"], ["57019", "57019.jpg"], ["57021", "57021.jpg"], ["57022", "57022.jpg"], ["57023", "57023.jpg"], ["57024", "57024.jpg"], ["57025", "57025.jpg"], ["57027", "57027.jpg"], ["57028", "57028.jpg"], ["57029", "57029.jpg"], ["57030", "57030.jpg"], ["57032", "57032.jpg"], ["57034", "57034.jpg"], ["57035", "57035.jpg"], ["57036", "57036.jpg"], ["57037", "57037.jpg"], ["57038", "57038.jpg"], ["57039", "57039.jpg"], ["57040", "57040.jpg"], ["57041", "57041.jpg"], ["57042", "57042.jpg"], ["57043", "57043.jpg"], ["57044", "57044.jpg"], ["57045", "57045.jpg"], ["57054", "57054.jpg"], ["57055", "57055.jpg"], ["57056", "57056.jpg"], ["61081", "61081.jpg"], ["80078", "80078.jpg"], ["80120", "80120.jpg"], ["80127", "80127.jpg"], ["80131", "80131.jpg"], ["80143", "80143.jpg"], ["80156", "80156.jpg"], ["80157", "80157.jpg"], ["80158", "80158.jpg"], ["80163", "80163.jpg"], ["80164", "80164.jpg"], ["80165", "80165.jpg"], ["80173", "80173.jpg"], ["80181", "80181.jpg"], ["80183", "80183.jpg"], ["80184", "80184.jpg"], ["80185", "80185.jpg"], ["80186", "80186.jpg"], ["80188", "80188.jpg"], ["80189", "80189.jpg"], ["80191", "80191.jpg"], ["80193", "80193.jpg"], ["80194", "80194.jpg"], ["80195", "80195.jpg"], ["80196", "80196.jpg"], ["80197", "80197.jpg"], ["80198", "80198.jpg"], ["80200", "80200.jpg"], ["80201", "80201.jpg"], ["80202", "80202.jpg"], ["80203", "80203.jpg"], ["80204", "80204.jpg"], ["80205", "80205.jpg"], ["80206", "80206.jpg"], ["80207", "80207.jpg"], ["80208", "80208.jpg"], ["80209", "80209.jpg"], ["80210", "80210.jpg"], ["80211", "80211.jpg"], ["80212", "80212.jpg"], ["80213", "80213.jpg"], ["80214", "80214.jpg"], ["80215", "80215.jpg"], ["80217", "80217.jpg"], ["80218", "80218.jpg"], ["80221", "80221.jpg"], ["80223", "80223.jpg"], ["80224", "80224.jpg"], ["80225", "80225.jpg"], ["80226", "80226.jpg"], ["80227", "80227.jpg"], ["80228", "80228.jpg"], ["80230", "80230.jpg"], ["80231", "80231.jpg"], ["80232", "80232.jpg"], ["80233", "80233.jpg"], ["80234", "80234.jpg"], ["80235", "80235.jpg"], ["80236", "80236.jpg"], ["80237", "80237.jpg"], ["80239", "80239.jpg"], ["80240", "80240.jpg"], ["80241", "80241.jpg"], ["80242", "80242.jpg"], ["80243", "80243.jpg"], ["80244", "80244.jpg"], ["80245", "80245.jpg"], ["80246", "80246.jpg"], ["80247", "80247.jpg"], ["80248", "80248.jpg"], ["80251", "80251.jpg"], ["80252", "80252.jpg"], ["80253", "80253.jpg"], ["80255", "80255.jpg"], ["80256", "80256.jpg"], ["80257", "80257.jpg"], ["80258", "80258.jpg"], ["80259", "80259.jpg"], ["80260", "80260.jpg"], ["80261", "80261.jpg"], ["80262", "80262.jpg"], ["80263", "80263.jpg"], ["80264", "80264.jpg"], ["80265", "80265.jpg"], ["80266", "80266.jpg"], ["80267", "80267.jpg"], ["80268", "80268.jpg"], ["80269", "80269.jpg"], ["80270", "80270.jpg"], ["80271", "80271.jpg"], ["80272", "80272.jpg"], ["80273", "80273.jpg"], ["80274", "80274.jpg"], ["80276", "80276.jpg"], ["80277", "80277.jpg"], ["80278", "80278.jpg"], ["80280", "80280.jpg"], ["80284", "80284.jpg"], ["80285", "80285.jpg"], ["80286", "80286.jpg"], ["80287", "80287.jpg"], ["80289", "80289.jpg"], ["80290", "80290.jpg"], ["80291", "80291.jpg"], ["80293", "80293.jpg"], ["80294", "80294.jpg"], ["80296", "80296.jpg"], ["80297", "80297.jpg"], ["80299", "80299.jpg"], ["80300", "80300.jpg"], ["80301", "80301.jpg"], ["80302", "80302.jpg"], ["80303", "80303.jpg"], ["80304", "80304.jpg"], ["80305", "80305.jpg"], ["80306", "80306.jpg"], ["80307", "80307.jpg"], ["80308", "80308.jpg"], ["80309", "80309.jpg"], ["80310", "80310.jpg"], ["80311", "80311.jpg"], ["80312", "80312.jpg"], ["80313", "80313.jpg"], ["80314", "80314.jpg"], ["80315", "80315.jpg"], ["80316", "80316.jpg"], ["80317", "80317.jpg"], ["80318", "80318.jpg"], ["80319", "80319.jpg"], ["80322", "80322.jpg"], ["80323", "80323.jpg"], ["80327", "80327.jpg"], ["80329", "80329.jpg"], ["80330", "80330.jpg"], ["80331", "80331.jpg"], ["80334", "80334.jpg"], ["80341", "80341.jpg"], ["80342", "80342.jpg"], ["80343", "80343.jpg"], ["80344", "80344.jpg"], ["80345", "80345.jpg"], ["80373", "80373.jpg"], ["80399", "80399.jpg"], ["80400", "80400.jpg"], ["80402", "80402.jpg"], ["80403", "80403.jpg"], ["80404", "80404.jpg"], ["80406", "80406.jpg"], ["80408", "80408.jpg"], ["80410", "80410.jpg"], ["80411", "80411.jpg"], ["80414", "80414.jpg"], ["80415", "80415.jpg"], ["80417", "80417.jpg"], ["80419", "80419.jpg"], ["80421", "80421.jpg"], ["80422", "80422.jpg"], ["80424", "80424.jpg"], ["80425", "80425.jpg"], ["80426", "80426.jpg"], ["80427", "80427.jpg"], ["80428", "80428.jpg"], ["80429", "80429.jpg"], ["80431", "80431.jpg"], ["80434", "80434.jpg"], ["80435", "80435.jpg"], ["80437", "80437.jpg"], ["80438", "80438.jpg"], ["80439", "80439.jpg"], ["80440", "80440.jpg"], ["80442", "80442.jpg"], ["80443", "80443.jpg"], ["80444", "80444.jpg"], ["80446", "80446.jpg"], ["80447", "80447.jpg"], ["80448", "80448.jpg"], ["80449", "80449.jpg"], ["80450", "80450.jpg"], ["80451", "80451.jpg"], ["80452", "80452.jpg"], ["80453", "80453.jpg"], ["80454", "80454.jpg"], ["80455", "80455.jpg"], ["80456", "80456.jpg"], ["80457", "80457.jpg"], ["80458", "80458.jpg"], ["80459", "80459.jpg"], ["80460", "80460.jpg"], ["80461", "80461.jpg"], ["80463", "80463.jpg"], ["80464", "80464.jpg"], ["80466", "80466.jpg"], ["80467", "80467.jpg"], ["80468", "80468.jpg"], ["80469", "80469.jpg"], ["80470", "80470.jpg"], ["80471", "80471.jpg"], ["80472", "80472.jpg"], ["80473", "80473.jpg"], ["80474", "80474.jpg"], ["80475", "80475.jpg"], ["80476", "80476.jpg"], ["80477", "80477.jpg"], ["80478", "80478.jpg"], ["80479", "80479.jpg"], ["80480", "80480.jpg"], ["80481", "80481.jpg"], ["80482", "80482.jpg"], ["80485", "80485.jpg"], ["80486", "80486.jpg"], ["80487", "80487.jpg"], ["80488", "80488.jpg"], ["80489", "80489.jpg"], ["80490", "80490.jpg"], ["80491", "80491.jpg"], ["80492", "80492.jpg"], ["80493", "80493.jpg"], ["80494", "80494.jpg"], ["80495", "80495.jpg"], ["80496", "80496.jpg"], ["80497", "80497.jpg"], ["80498", "80498.jpg"], ["80499", "80499.jpg"], ["80500", "80500.jpg"], ["80501", "80501.jpg"], ["80502", "80502.jpg"], ["80503", "80503.jpg"], ["80505", "80505.jpg"], ["80506", "80506.jpg"], ["80507", "80507.jpg"], ["80508", "80508.jpg"], ["80509", "80509.jpg"], ["80511", "80511.jpg"], ["80512", "80512.jpg"], ["80515", "80515.jpg"], ["80516", "80516.jpg"], ["80520", "80520.jpg"], ["80521", "80521.jpg"], ["80570", "80570.jpg"], ["80573", "80573.jpg"], ["80574", "80574.jpg"], ["80575", "80575.jpg"], ["80576", "80576.jpg"], ["80577", "80577.jpg"], ["80580", "80580.jpg"], ["80581", "80581.jpg"], ["80582", "80582.jpg"], ["80583", "80583.jpg"], ["80584", "80584.jpg"], ["80586", "80586.jpg"], ["80587", "80587.jpg"], ["80588", "80588.jpg"], ["80589", "80589.jpg"], ["80590", "80590.jpg"], ["80591", "80591.jpg"], ["80592", "80592.jpg"], ["80593", "80593.jpg"], ["80594", "80594.jpg"], ["80595", "80595.jpg"], ["80596", "80596.jpg"], ["80597", "80597.jpg"], ["80598", "80598.jpg"], ["80599", "80599.jpg"], ["80600", "80600.jpg"], ["80601", "80601.jpg"], ["80602", "80602.jpg"], ["80604", "80604.jpg"], ["80606", "80606.jpg"], ["80607", "80607.jpg"], ["80608", "80608.jpg"], ["80609", "80609.jpg"], ["80611", "80611.jpg"], ["80612", "80612.jpg"], ["80615", "80615.jpg"], ["80616", "80616.jpg"], ["80619", "80619.jpg"], ["80620", "80620.jpg"], ["8172", "8172.jpg"], ["8187", "8187.jpg"], ["8229", "8229.jpg"], ["8260", "8260.jpg"], ["8264", "8264.jpg"], ["8275", "8275.jpg"], ["8279", "8279.jpg"], ["8282", "8282.jpg"], ["8288", "8288.jpg"], ["fila33_SIN_CODIGO", "fila33_SIN_CODIGO.jpg"], ["Zapatilla_nuevo_1", "Zapatilla_nuevo_1.jpg"]];
+
+const grid = document.getElementById('grid');
+const search = document.getElementById('search');
+const count = document.getElementById('count');
+const empty = document.getElementById('empty');
+const overlay = document.getElementById('overlay');
+const modalImg = document.getElementById('modalImg');
+const modalCode = document.getElementById('modalCode');
+const closeBtn = document.getElementById('closeBtn');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+items.reverse();
+let currentFiltered = items;
+let currentIndex = -1;
+let currentCat = 'todos';
+let currentSub = 'todos';
+
+const catBar = document.getElementById('catBar');
+const subBar = document.getElementById('subBar');
+
+function getCategory(code) {
+  if (code.startsWith('8')) return { cat: 'bolsos', sub: null };
+  if (code.startsWith('54')) return { cat: 'calzado', sub: 'tenis' };
+  if (code.startsWith('57')) return { cat: 'calzado', sub: 'botines' };
+  if (code.startsWith('56')) return { cat: 'calzado', sub: 'zapatillas' };
+  if (code.startsWith('51')) return { cat: 'calzado', sub: 'sandalias_planas' };
+  if (code.startsWith('55')) return { cat: 'calzado', sub: 'sandalias_tacon' };
+  if (code.startsWith('5')) return { cat: 'calzado', sub: 'sandalias' };
+  return { cat: null, sub: null };
+}
+
+const SUBCATS = {
+  calzado: [
+    { key: 'todos', label: 'Todos' },
+    { key: 'tenis', label: 'Tenis' },
+    { key: 'botines', label: 'Botines' },
+    { key: 'zapatillas', label: 'Zapatillas' },
+    { key: 'sandalias_planas', label: 'Sandalias Planas' },
+    { key: 'sandalias_tacon', label: 'Sandalias de Tacón' },
+    { key: 'sandalias', label: 'Sandalias' },
+  ],
+};
+
+function updateSubBar() {
+  const subs = SUBCATS[currentCat];
+  if (!subs) {
+    subBar.innerHTML = '';
+    subBar.classList.add('hidden');
+    return;
+  }
+  subBar.innerHTML = subs.map(s =>
+    `<button class="sub-btn${s.key === 'todos' ? ' active' : ''}" data-sub="${s.key}">${s.label}</button>`
+  ).join('');
+  subBar.classList.remove('hidden');
+}
+
+function render() {
+  grid.innerHTML = '';
+  currentFiltered.forEach(([code, file], idx) => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.dataset.code = code.toLowerCase();
+    div.innerHTML = `
+      <div class="thumb-wrap"><img src="${file}" loading="lazy" alt="${code}"></div>
+      <div class="code">${code}</div>
+    `;
+    div.addEventListener('click', () => openModal(idx));
+    grid.appendChild(div);
+  });
+  count.textContent = currentFiltered.length + ' fotos';
+  empty.classList.toggle('hidden', currentFiltered.length > 0);
+  grid.classList.toggle('hidden', currentFiltered.length === 0);
+}
+
+function filter() {
+  const q = search.value.trim().toLowerCase();
+  currentFiltered = items.filter(([code]) => {
+    if (q && !code.toLowerCase().includes(q)) return false;
+    if (currentCat !== 'todos') {
+      const { cat, sub } = getCategory(code);
+      if (cat !== currentCat) return false;
+      if (currentSub !== 'todos' && sub !== currentSub) return false;
+    }
+    return true;
+  });
+  render();
+}
+
+function openModal(idx) {
+  currentIndex = idx;
+  const [code, file] = currentFiltered[idx];
+  modalImg.src = file;
+  modalCode.textContent = code;
+  overlay.classList.remove('hidden');
+}
+
+function closeModal() {
+  overlay.classList.add('hidden');
+}
+
+function showRelative(delta) {
+  if (currentIndex === -1 || currentFiltered.length === 0) return;
+  const newIndex = (currentIndex + delta + currentFiltered.length) % currentFiltered.length;
+  openModal(newIndex);
+}
+
+catBar.addEventListener('click', (e) => {
+  const btn = e.target.closest('.cat-btn');
+  if (!btn) return;
+  currentCat = btn.dataset.cat;
+  currentSub = 'todos';
+  catBar.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b === btn));
+  updateSubBar();
+  filter();
+});
+
+subBar.addEventListener('click', (e) => {
+  const btn = e.target.closest('.sub-btn');
+  if (!btn) return;
+  currentSub = btn.dataset.sub;
+  subBar.querySelectorAll('.sub-btn').forEach(b => b.classList.toggle('active', b === btn));
+  filter();
+});
+
+search.addEventListener('input', filter);
+closeBtn.addEventListener('click', closeModal);
+overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+prevBtn.addEventListener('click', () => showRelative(-1));
+nextBtn.addEventListener('click', () => showRelative(1));
+document.addEventListener('keydown', (e) => {
+  if (overlay.classList.contains('hidden')) return;
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'ArrowLeft') showRelative(-1);
+  if (e.key === 'ArrowRight') showRelative(1);
+});
+
+filter();
+</script>
+</body>
+</html>
